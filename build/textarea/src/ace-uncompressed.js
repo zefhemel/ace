@@ -4249,9 +4249,9 @@ var Editor =function(renderer, session) {
     }
 
     this.$highlightBrackets = function() {
-        if (this.$bracketHighlight) {
-            this.session.removeMarker(this.$bracketHighlight);
-            this.$bracketHighlight = null;
+        if (this.session.$bracketHighlight) {
+            this.session.removeMarker(this.session.$bracketHighlight);
+            this.session.$bracketHighlight = null;
         }
 
         if (this.$highlightPending) {
@@ -4267,7 +4267,7 @@ var Editor =function(renderer, session) {
             var pos = self.session.findMatchingBracket(self.getCursorPosition());
             if (pos) {
                 var range = new Range(pos.row, pos.column, pos.row, pos.column+1);
-                self.$bracketHighlight = self.session.addMarker(range, "ace_bracket");
+                self.session.$bracketHighlight = self.session.addMarker(range, "ace_bracket");
             }
         }, 10);
     };
@@ -7598,7 +7598,7 @@ var EditSession = function(text, mode) {
             // If wrapMode is activaed, the wrapData array has to be initialized.
             if (useWrapMode) {
                 var len = this.getLength();
-                this.$wrapMode = [];
+                this.$wrapData = [];
                 for (i = 0; i < len; i++) {
                     this.$wrapData.push([]);
                 }
@@ -10291,7 +10291,148 @@ exports.UndoManager = UndoManager;
 __ace_shadowed__.define('ace/theme/textmate', function(require, exports, module) {
 
     var dom = require("pilot/dom");
-    var cssText = require("text!ace/theme/tm.css");
+
+    var cssText = ".ace-tm .ace_editor {\
+  border: 2px solid rgb(159, 159, 159);\
+}\
+\
+.ace-tm .ace_editor.ace_focus {\
+  border: 2px solid #327fbd;\
+}\
+\
+.ace-tm .ace_gutter {\
+  width: 50px;\
+  background: #e8e8e8;\
+  color: #333;\
+  overflow : hidden;\
+}\
+\
+.ace-tm .ace_gutter-layer {\
+  width: 100%;\
+  text-align: right;\
+}\
+\
+.ace-tm .ace_gutter-layer .ace_gutter-cell {\
+  padding-right: 6px;\
+}\
+\
+.ace-tm .ace_print_margin {\
+  width: 1px;\
+  background: #e8e8e8;\
+}\
+\
+.ace-tm .ace_text-layer {\
+  cursor: text;\
+}\
+\
+.ace-tm .ace_cursor {\
+  border-left: 2px solid black;\
+}\
+\
+.ace-tm .ace_cursor.ace_overwrite {\
+  border-left: 0px;\
+  border-bottom: 1px solid black;\
+}\
+        \
+.ace-tm .ace_line .ace_invisible {\
+  color: rgb(191, 191, 191);\
+}\
+\
+.ace-tm .ace_line .ace_keyword {\
+  color: blue;\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_buildin {\
+  color: rgb(88, 72, 246);\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_language {\
+  color: rgb(88, 92, 246);\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_library {\
+  color: rgb(6, 150, 14);\
+}\
+\
+.ace-tm .ace_line .ace_invalid {\
+  background-color: rgb(153, 0, 0);\
+  color: white;\
+}\
+\
+.ace-tm .ace_line .ace_support.ace_function {\
+  color: rgb(60, 76, 114);\
+}\
+\
+.ace-tm .ace_line .ace_support.ace_constant {\
+  color: rgb(6, 150, 14);\
+}\
+\
+.ace-tm .ace_line .ace_support.ace_type,\
+.ace-tm .ace_line .ace_support.ace_class {\
+  color: rgb(109, 121, 222);\
+}\
+\
+.ace-tm .ace_line .ace_keyword.ace_operator {\
+  color: rgb(104, 118, 135);\
+}\
+\
+.ace-tm .ace_line .ace_string {\
+  color: rgb(3, 106, 7);\
+}\
+\
+.ace-tm .ace_line .ace_comment {\
+  color: rgb(76, 136, 107);\
+}\
+\
+.ace-tm .ace_line .ace_comment.ace_doc {\
+  color: rgb(0, 102, 255);\
+}\
+\
+.ace-tm .ace_line .ace_comment.ace_doc.ace_tag {\
+  color: rgb(128, 159, 191);\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_numeric {\
+  color: rgb(0, 0, 205);\
+}\
+\
+.ace-tm .ace_line .ace_variable {\
+  color: rgb(49, 132, 149);\
+}\
+\
+.ace-tm .ace_line .ace_xml_pe {\
+  color: rgb(104, 104, 91);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_selection {\
+  background: rgb(181, 213, 255);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_step {\
+  background: rgb(252, 255, 0);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_stack {\
+  background: rgb(164, 229, 101);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_bracket {\
+  margin: -1px 0 0 -1px;\
+  border: 1px solid rgb(192, 192, 192);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_active_line {\
+  background: rgb(232, 242, 254);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_selected_word {\
+  background: rgb(250, 250, 255);\
+  border: 1px solid rgb(200, 200, 250);\
+}\
+\
+.ace-tm .ace_string.ace_regex {\
+  color: rgb(255, 0, 0)\
+}";
 
     // import CSS once
     dom.importCssString(cssText);
@@ -10483,6 +10624,7 @@ var VirtualRenderer = function(container, theme) {
         _self.characterWidth = textLayer.getCharacterWidth();
         _self.lineHeight = textLayer.getLineHeight();
         _self.$updatePrintMargin();
+        _self.onResize(true);
 
         _self.$loop.schedule(_self.CHANGE_FULL);
     });
@@ -10666,7 +10808,7 @@ var VirtualRenderer = function(container, theme) {
 
         if (!this.$showPrintMargin && !this.$printMarginEl)
             return;
-            
+
         if (!this.$printMarginEl) {
             containerEl = document.createElement("div");
             containerEl.className = "ace_print_margin_layer";
@@ -10693,18 +10835,18 @@ var VirtualRenderer = function(container, theme) {
         return this.container;
     };
 
-    this.moveTextAreaToCursor = function(textarea) {        
+    this.moveTextAreaToCursor = function(textarea) {
         // in IE the native cursor always shines through
         if (useragent.isIE)
             return;
-            
+
         var pos = this.$cursorLayer.getPixelPosition();
         if (!pos)
             return;
 
         var bounds = this.content.getBoundingClientRect();
         var offset = (this.layerConfig && this.layerConfig.offset) || 0;
-        
+
         textarea.style.left = (bounds.left + pos.left + this.$padding) + "px";
         textarea.style.top = (bounds.top + pos.top - this.scrollTop + offset) + "px";
     };
@@ -10807,7 +10949,7 @@ var VirtualRenderer = function(container, theme) {
         if (changes & (this.CHANGE_MARKER | this.CHANGE_MARKER_FRONT)) {
             this.$markerFront.update(this.layerConfig);
         }
-        
+
         if (changes & (this.CHANGE_MARKER | this.CHANGE_MARKER_BACK)) {
             this.$markerBack.update(this.layerConfig);
         }
@@ -11058,15 +11200,15 @@ var VirtualRenderer = function(container, theme) {
             this.$composition.className = "ace_composition";
             this.content.appendChild(this.$composition);
         }
-        
+
         this.$composition.innerHTML = "&nbsp;";
-        
+
         var pos = this.$cursorLayer.getPixelPosition();
         var style = this.$composition.style;
         style.top = pos.top + "px";
         style.left = (pos.left + this.$padding) + "px";
         style.height = this.lineHeight + "px";
-        
+
         this.hideCursor();
     };
 
@@ -12264,233 +12406,6 @@ __ace_shadowed__.define("text!ace/css/editor.css", ".ace_editor {" +
   "}" +
   "");
 
-__ace_shadowed__.define("text!ace/theme/eclipse.css", ".ace-eclipse .ace_editor {" +
-  "  border: 2px solid rgb(159, 159, 159);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_editor.ace_focus {" +
-  "  border: 2px solid #327fbd;" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_gutter {" +
-  "  width: 40px;" +
-  "  background: rgb(227, 227, 227);" +
-  "  border-right: 1px solid rgb(159, 159, 159);	 " +
-  "  color: rgb(136, 136, 136);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_gutter-layer {" +
-  "  right: 10px;" +
-  "  text-align: right;" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_text-layer {" +
-  "  cursor: text;" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_cursor {" +
-  "  border-left: 1px solid black;" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_keyword, .ace-eclipse .ace_line .ace_variable {" +
-  "  color: rgb(127, 0, 85);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_constant.ace_buildin {" +
-  "  color: rgb(88, 72, 246);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_constant.ace_library {" +
-  "  color: rgb(6, 150, 14);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_function {" +
-  "  color: rgb(60, 76, 114);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_string {" +
-  "  color: rgb(42, 0, 255);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_comment {" +
-  "  color: rgb(63, 127, 95);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_comment.ace_doc {" +
-  "  color: rgb(63, 95, 191);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_comment.ace_doc.ace_tag {" +
-  "  color: rgb(127, 159, 191);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_constant.ace_numeric {" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_tag {" +
-  "	color: rgb(63, 127, 127);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_line .ace_xml_pe {" +
-  "  color: rgb(104, 104, 91);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_marker-layer .ace_selection {" +
-  "  background: rgb(181, 213, 255);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_marker-layer .ace_bracket {" +
-  "  margin: -1px 0 0 -1px;" +
-  "  border: 1px solid rgb(192, 192, 192);" +
-  "}" +
-  "" +
-  ".ace-eclipse .ace_marker-layer .ace_active_line {" +
-  "  background: rgb(232, 242, 254);" +
-  "}");
-
-__ace_shadowed__.define("text!ace/theme/tm.css", ".ace-tm .ace_editor {" +
-  "  border: 2px solid rgb(159, 159, 159);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_editor.ace_focus {" +
-  "  border: 2px solid #327fbd;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_gutter {" +
-  "  width: 50px;" +
-  "  background: #e8e8e8;" +
-  "  color: #333;" +
-  "  overflow : hidden;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_gutter-layer {" +
-  "  width: 100%;" +
-  "  text-align: right;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_gutter-layer .ace_gutter-cell {" +
-  "  padding-right: 6px;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_print_margin {" +
-  "  width: 1px;" +
-  "  background: #e8e8e8;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_text-layer {" +
-  "  cursor: text;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_cursor {" +
-  "  border-left: 2px solid black;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_cursor.ace_overwrite {" +
-  "  border-left: 0px;" +
-  "  border-bottom: 1px solid black;" +
-  "}" +
-  "        " +
-  ".ace-tm .ace_line .ace_invisible {" +
-  "  color: rgb(191, 191, 191);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_keyword {" +
-  "  color: blue;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_constant.ace_buildin {" +
-  "  color: rgb(88, 72, 246);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_constant.ace_language {" +
-  "  color: rgb(88, 92, 246);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_constant.ace_library {" +
-  "  color: rgb(6, 150, 14);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_invalid {" +
-  "  background-color: rgb(153, 0, 0);" +
-  "  color: white;" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_support.ace_function {" +
-  "  color: rgb(60, 76, 114);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_support.ace_constant {" +
-  "  color: rgb(6, 150, 14);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_support.ace_type," +
-  ".ace-tm .ace_line .ace_support.ace_class {" +
-  "  color: rgb(109, 121, 222);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_keyword.ace_operator {" +
-  "  color: rgb(104, 118, 135);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_string {" +
-  "  color: rgb(3, 106, 7);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_comment {" +
-  "  color: rgb(76, 136, 107);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_comment.ace_doc {" +
-  "  color: rgb(0, 102, 255);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_comment.ace_doc.ace_tag {" +
-  "  color: rgb(128, 159, 191);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_constant.ace_numeric {" +
-  "  color: rgb(0, 0, 205);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_variable {" +
-  "  color: rgb(49, 132, 149);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_line .ace_xml_pe {" +
-  "  color: rgb(104, 104, 91);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_marker-layer .ace_selection {" +
-  "  background: rgb(181, 213, 255);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_marker-layer .ace_step {" +
-  "  background: rgb(252, 255, 0);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_marker-layer .ace_stack {" +
-  "  background: rgb(164, 229, 101);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_marker-layer .ace_bracket {" +
-  "  margin: -1px 0 0 -1px;" +
-  "  border: 1px solid rgb(192, 192, 192);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_marker-layer .ace_active_line {" +
-  "  background: rgb(232, 242, 254);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_marker-layer .ace_selected_word {" +
-  "  background: rgb(250, 250, 255);" +
-  "  border: 1px solid rgb(200, 200, 250);" +
-  "}" +
-  "" +
-  ".ace-tm .ace_string.ace_regex {" +
-  "  color: rgb(255, 0, 0)   " +
-  "}" +
-  "");
-
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -12545,46 +12460,44 @@ var deps = [
 ];
 
 require(deps, function() {
-    var catalog = require("pilot/plugin_manager").catalog;
-    catalog.registerPlugins([ "pilot/index" ]);
 
-    var Dom = require("pilot/dom");
-    var Event = require("pilot/event");
+var catalog = require("pilot/plugin_manager").catalog;
+catalog.registerPlugins([ "pilot/index" ]);
 
-    var Editor = require("ace/editor").Editor;
-    var EditSession = require("ace/edit_session").EditSession;
-    var UndoManager = require("ace/undomanager").UndoManager;
-    var Renderer = require("ace/virtual_renderer").VirtualRenderer;
+var Dom = require("pilot/dom");
+var Event = require("pilot/event");
+var UA = require("pilot/useragent")
 
-    window.__ace_shadowed__.edit = function(el) {
-        if (typeof(el) == "string") {
-            el = document.getElementById(el);
-        }
+var Editor = require("ace/editor").Editor;
+var EditSession = require("ace/edit_session").EditSession;
+var UndoManager = require("ace/undomanager").UndoManager;
+var Renderer = require("ace/virtual_renderer").VirtualRenderer;
 
-        var doc = new EditSession(Dom.getInnerText(el));
-        doc.setUndoManager(new UndoManager());
-        el.innerHTML = '';
+window.__ace_shadowed__.edit = function(el) {
+    if (typeof(el) == "string") {
+        el = document.getElementById(el);
+    }
 
-        var editor = new Editor(new Renderer(el, "ace/theme/textmate"));
-        editor.setSession(doc);
+    var doc = new EditSession(Dom.getInnerText(el));
+    doc.setUndoManager(new UndoManager());
+    el.innerHTML = '';
 
-        var env = require("pilot/environment").create();
-        catalog.startupPlugins({ env: env }).then(function() {
-            env.document = doc;
-            env.editor = env;
+    var editor = new Editor(new Renderer(el, "ace/theme/textmate"));
+    editor.setSession(doc);
+
+    var env = require("pilot/environment").create();
+    catalog.startupPlugins({ env: env }).then(function() {
+        env.document = doc;
+        env.editor = env;
+        editor.resize();
+        Event.addListener(window, "resize", function() {
             editor.resize();
-            Event.addListener(window, "resize", function() {
-                editor.resize();
-            });
-            el.env = env;
         });
-        return editor;
-    }
+        el.env = env;
+    });
+    return editor;
+}
 
-    if (window.__ace_shadowed_loaded__) {
-        window.__ace_shadowed_loaded__();
-    }
-});
 
 /**
  * Returns the CSS property of element.
@@ -12596,9 +12509,15 @@ require(deps, function() {
  * is hidden and has no dimension styles).
  */
 var getCSSProperty = function(element, container, property) {
-    var ret = element.style[property]
-                || document.defaultView.getComputedStyle(element, '').
-                                        getPropertyValue(property);
+    var ret = element.style[property];
+
+    if (!ret) {
+        if (window.getComputedStyle) {
+            ret = window.getComputedStyle(element, '').getPropertyValue(property);
+        } else {
+            ret = element.currentStyle[property];
+        }
+    }
 
     if (!ret || ret == 'auto' || ret == 'intrinsic') {
         ret = container.style[property];
@@ -12658,15 +12577,15 @@ function setupContainer(element, getValue) {
 
         // The complete width is the width of the textarea + the padding
         // to the left and right.
-        var width = getCSSProperty(element, container, 'width');
-        var height = getCSSProperty(element, container, 'height');
+        var width = getCSSProperty(element, container, 'width') || (element.clientWidth + "px");
+        var height = getCSSProperty(element, container, 'height')  || (element.clientHeight + "px");
         style += 'height:' + height + ';width:' + width + ';';
 
         // Set the display property to 'inline-block'.
         style += 'display:inline-block;';
         container.setAttribute('style', style);
     };
-    window.addEventListener('resize', resizeEvent, false);
+    Event.addListener(window, 'resize', resizeEvent);
 
     // Call the resizeEvent once, so that the size of the container is
     // calculated.
@@ -12717,7 +12636,8 @@ window.__ace_shadowed__.transformTextarea = function(element) {
         top: "0px",
         left: "0px",
         right: "0px",
-        bottom: "0px"
+        bottom: "0px",
+        border: "1px solid gray"
     });
     container.appendChild(editorDiv);
 
@@ -12735,18 +12655,26 @@ window.__ace_shadowed__.transformTextarea = function(element) {
     settingOpener.innerHTML = "I";
 
     var settingDiv = document.createElement("div");
-    applyStyles(settingDiv, {
+    var settingDivStyles = {
         top: "0px",
         left: "0px",
         right: "0px",
         bottom: "0px",
         position: "absolute",
         padding: "5px",
-        background: "rgba(0, 0, 0, 0.6)",
         zIndex: 100,
         color: "white",
-        display: "none"
-    });
+        display: "none",
+        overflow: "auto",
+        fontSize: "14px"
+    };
+    if (!UA.isIE) {
+        settingDivStyles.backgroundColor = "rgba(0, 0, 0, 0.6)";
+    } else {
+        settingDivStyles.backgroundColor = "#333";
+    }
+
+    applyStyles(settingDiv, settingDivStyles);
     container.appendChild(settingDiv);
 
     // Power up ace on the textarea:
@@ -12774,7 +12702,6 @@ window.__ace_shadowed__.transformTextarea = function(element) {
 }
 
 function setupApi(editor, editorDiv, settingDiv, ace, options) {
-    var load = ace.load;
     var session = editor.getSession();
     var renderer = editor.renderer;
 
@@ -12790,6 +12717,8 @@ function setupApi(editor, editorDiv, settingDiv, ace, options) {
         setOption: function(key, value) {
             if (options[key] == value) return;
 
+            var load = window.__ace_shadowed_load__;
+
             switch (key) {
                 case "gutter":
                     renderer.setShowGutter(toBool(value));
@@ -12798,7 +12727,7 @@ function setupApi(editor, editorDiv, settingDiv, ace, options) {
                 case "mode":
                     if (value != "text") {
                         // Load the required mode file. Files get loaded only once.
-                        load("mode-" + value + ".js", function() {
+                        load("mode-" + value + ".js", "ace/mode/" + value, function() {
                             var aceMode = require("ace/mode/" + value).Mode;
                             session.setMode(new aceMode());
                         });
@@ -12810,7 +12739,7 @@ function setupApi(editor, editorDiv, settingDiv, ace, options) {
                 case "theme":
                     if (value != "textmate") {
                         // Load the required theme file. Files get loaded only once.
-                        load("theme-" + value + ".js", function() {
+                        load("theme-" + value + ".js", "ace/theme/" + value, function() {
                             editor.setTheme("ace/theme/" + value);
                         });
                     } else {
@@ -12821,6 +12750,34 @@ function setupApi(editor, editorDiv, settingDiv, ace, options) {
                 case "fontSize":
                     editorDiv.style.fontSize = value;
                 break;
+
+                case "softWrap":
+                    switch (value) {
+                        case "off":
+                            session.setUseWrapMode(false);
+                            renderer.setPrintMarginColumn(80);
+                        break;
+                        case "40":
+                            session.setUseWrapMode(true);
+                            session.setWrapLimitRange(40, 40);
+                            renderer.setPrintMarginColumn(40);
+                        break;
+                        case "80":
+                            session.setUseWrapMode(true);
+                            session.setWrapLimitRange(80, 80);
+                            renderer.setPrintMarginColumn(80);
+                        break;
+                        case "free":
+                            session.setUseWrapMode(true);
+                            session.setWrapLimitRange(null, null);
+                            renderer.setPrintMarginColumn(80);
+                        break;
+                    }
+                break;
+
+                case "showPrintMargin":
+                    renderer.setShowPrintMargin(toBool(value));
+                break
             }
 
             options[key] = value;
@@ -12852,7 +12809,9 @@ function setupSettingPanel(settingDiv, settingOpener, api, options) {
         mode: "Mode:",
         gutter: "Display Gutter:",
         theme: "Theme:",
-        fontSize: "Font Size:"
+        fontSize: "Font Size:",
+        softWrap: "Soft Wrap:",
+        showPrintMargin: "Show Print Margin:"
     }
 
     var optionValues = {
@@ -12880,15 +12839,23 @@ function setupSettingPanel(settingDiv, settingOpener, api, options) {
             mono_industrial:    "Mono Industrial",
             monokai:    "Monokai",
             pastel_on_dark: "Pastel On Dark",
-            twilight: "Twilight",
+            twilight: "Twilight"
         },
         gutter: BOOL,
         fontSize: {
             "10px": "10px",
+            "11px": "11px",
             "12px": "12px",
             "14px": "14px",
             "16px": "16px"
-        }
+        },
+        softWrap: {
+            off:    "Off",
+            40:     "40",
+            80:     "80",
+            free:   "Free"
+        },
+        showPrintMargin: BOOL
     }
 
     var table = [];
@@ -12919,13 +12886,17 @@ function setupSettingPanel(settingDiv, settingOpener, api, options) {
     table.push("</table>");
     settingDiv.innerHTML = table.join("");
 
-    var selects = settingDiv.querySelectorAll("select");
+    var selects = settingDiv.getElementsByTagName("select");
     for (var i = 0; i < selects.length; i++) {
-        selects[i].onchange = function(e) {
-            var option = e.target.title;
-            var value  = e.target.value;
-            api.setOption(option, value);
-        }
+        var onChange = (function() {
+            var select = selects[i];
+            return function() {
+                var option = select.title;
+                var value  = select.value;
+                api.setOption(option, value);
+            }
+        })();
+        selects[i].onchange = onChange;
     }
 
     var button = document.createElement("input");
@@ -12946,7 +12917,11 @@ window.__ace_shadowed__.options = {
     mode:       "text",
     theme:      "textmate",
     gutter:     "false",
-    fontSize:   "12px"
+    fontSize:   "12px",
+    softWrap:   "off",
+    showPrintMargin: "false"
 }
+
+});
 
 })()
