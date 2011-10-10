@@ -74,6 +74,7 @@ var GroovyMode = require("ace/mode/groovy").Mode;
 var ScalaMode = require("ace/mode/scala").Mode;
 var LatexMode = require("ace/mode/latex").Mode;
 var PowershellMode = require("ace/mode/powershell").Mode;
+var DartMode = require("ace/mode/dart").Mode;
 var UndoManager = require("ace/undomanager").UndoManager;
 
 var vim = require("ace/keyboard/keybinding/vim").Vim;
@@ -206,6 +207,10 @@ exports.launch = function(env) {
     docs.powershell.setMode(new PowershellMode());
     docs.powershell.setUndoManager(new UndoManager());
 
+    docs.dart = new EditSession(require("ace/requirejs/text!demo/docs/dart.dart"));
+    docs.dart.setMode(new DartMode());
+    docs.dart.setUndoManager(new UndoManager());
+
     // Add a "name" property to all docs
     for (var doc in docs) {
         docs[doc].name = doc;
@@ -251,7 +256,8 @@ exports.launch = function(env) {
         groovy: new GroovyMode(),
         scala: new ScalaMode(),
         latex: new LatexMode(),
-        powershell: new PowershellMode()
+        powershell: new PowershellMode(),
+        dart: new DartMode(),
     };
 
     function getMode() {
@@ -360,6 +366,9 @@ exports.launch = function(env) {
         }
         else if (mode instanceof PowershellMode) {
             modeEl.value = "powershell";
+        }
+        else if (mode instanceof DartMode) {
+            modeEl.value = "dart";
         }
         else {
             modeEl.value = "text";
@@ -577,6 +586,8 @@ exports.launch = function(env) {
                     mode = "groovy";
                 } else if (/^.*\.(scala)$/i.test(file.name)) {
                     mode = "scala";
+                } else if (/^.*\.(dart)$/i.test(file.name)) {
+                    mode = "dart";
                 }
 
                 env.editor.onTextInput(reader.result);
